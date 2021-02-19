@@ -49,34 +49,31 @@ def map_sample(accession, layout_type, salmon_idx, threads, out_dir):
     quant_dir = Path(f"{out_dir}/quants/{accession}_quants")
     quant_file = Path(f"{quant_dir}/quant.sf")
 
-    if not quant_file.exists():
-        if layout_type == "PAIRED":
-            fq1 = Path(f"{out_dir}/{accession}_1.fastq")
-            fq2 = Path(f"{out_dir}/{accession}_2.fastq")
-        
-            if fq1.exists() and fq2.exists():
-                subprocess.run(f"salmon quant --seqBias --gcBias -i {salmon_idx} -l 'A' -p {threads} -1 {fq1} -2 {fq2} -o {quant_dir}", shell=True)
-            else:
-                sys.exit("Input fastq files do not exist")
-
-            if quant_file.exists():
-                subprocess.run(f"rm -f {fq1} {fq2}", shell=True)
-            else:
-                sys.exit("quants.sf file not generated. Check Salmon logs.")
+    if layout_type == "PAIRED":
+        fq1 = Path(f"{out_dir}/{accession}_1.fastq")
+        fq2 = Path(f"{out_dir}/{accession}_2.fastq")
+    
+        if fq1.exists() and fq2.exists():
+            subprocess.run(f"salmon quant --seqBias --gcBias -i {salmon_idx} -l 'A' -p {threads} -1 {fq1} -2 {fq2} -o {quant_dir}", shell=True)
         else:
-            fq = Path(f"{out_dir}/{accession}.fastq")
+            sys.exit("Input fastq files do not exist")
 
-            if fq.exists():
-                subprocess.run(f"salmon quant --seqBias --gcBias -i {salmon_idx} -l 'A' -p {threads} -r {fq} -o {quant_dir}", shell=True)
-            else:
-                sys.exit("Input fastq files do not exist")
-            
-            if quant_file.exists():
-                subprocess.run(f"rm -f {fq}", shell=True)
-            else:
-                sys.exit("quants.sf file not generated. Check Salmon logs")
+        if quant_file.exists():
+            subprocess.run(f"rm -f {fq1} {fq2}", shell=True)
+        else:
+            sys.exit("quants.sf file not generated. Check Salmon logs.")
     else:
-        print(f"{quant_file} present for {accession}. Skipping mapping...")
+        fq = Path(f"{out_dir}/{accession}.fastq")
+
+        if fq.exists():
+            subprocess.run(f"salmon quant --seqBias --gcBias -i {salmon_idx} -l 'A' -p {threads} -r {fq} -o {quant_dir}", shell=True)
+        else:
+            sys.exit("Input fastq files do not exist")
+        
+        if quant_file.exists():
+            subprocess.run(f"rm -f {fq}", shell=True)
+        else:
+            sys.exit("quants.sf file not generated. Check Salmon logs")
 
 
 def main():
@@ -102,12 +99,16 @@ def main():
         sra_acc = record[0]
         layout = record[1]
         strategy = record[2]
+        quant_file = Path(f"{out_dir}/quants/{sra_acc}_quants/quant.sf")
 
         if strategy == "RNA-Seq":
-            print(f"Downloading {sra_acc}...")
-            download_fq(sra_acc, layout, threads, out_dir)
-            print(f"Mapping {sra_acc}...")
-            map_sample(sra_acc, layout, salmon_idx, threads, out_dir)
+            if quant_file.exists():
+                print(f"Mapping results exist for {sra_acc}. Skipping...")
+            else:
+                print(f"Downloading {sra_acc}...")
+                download_fq(sra_acc, layout, threads, out_dir)
+                print(f"Mapping {sra_acc}...")
+                map_sample(sra_acc, layout, salmon_idx, threads, out_dir)
 
 
 if __name__ == '__main__':
