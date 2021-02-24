@@ -20,8 +20,9 @@ file contains separate lines with the BIOPROJECT ID, the number of samples, and 
 
 ## Step 2. Get the run information for each project
 
-The next step parses the search-results.tsv file and pulls the standard run-info.csv file and an additional 
-metadata.txt file from SRA. The script will output each file in a new, separate directory named with the BIOPROJECT ID for each record present in the 
+The next step parses the search-results.tsv file and pulls the standard run-info.csv 
+file and an additional metadata.txt file from SRA. The script will output each 
+file in a new, separate directory named with the BIOPROJECT ID for each record present in the 
 search results. **To protect against large BIOPROJECTS being imported, the script limits processing to BIOPROJECTS with fewer than (100) samples** 
 This can be changed by modifying the variables in the `02_get_run_info.sh` script.
 
@@ -29,10 +30,23 @@ This can be changed by modifying the variables in the `02_get_run_info.sh` scrip
 ./02_get_run_info.sh path/to/search-results.tsv $OUT_DIRECTORY
 ```
 
+## Step 2b. Manually clean sample metadata
+
+Since the run-info.csv file often does not contain useful sample metadata
+information an additional metadata.txt file is downloaded into the same directory.
+This file will contain SRA accessions along with associated metadata but is 
+poorly formatted and needs to be cleaned before any automated processing. 
+
+I typically create a copy of the metadata.txt file and name it `annotation.txt` (csv or tsv is also acceptable).
+Within this annotation file I create new columns for the `sample_name` (SRA accession)
+and the `group` (the grouping factor used in the experiment). **These two columns are neccessary for further processing**.
+Additional metadata columns can also be present but `sample_name` and `group` are required 
+if you want to automatically create `SummarizedExperiment` objects as described below (Step 4).
+
 ## Step 3. Download fastqs and map with Salmon
 
-This step downloads all SRA accessions for each BIOPROJECT, maps each sample, then removes each fastq file after successful
-completion. 
+This step downloads all SRA accessions for each BIOPROJECT, maps each sample, 
+then removes each fastq file after successful completion. 
 
 To run downloading and mapping on all BIOPROJECTS downloaded:
 
@@ -50,26 +64,11 @@ for the salmon_idx, out_directory, and number of threads used in `03_download_an
 In some cases, `fasterq-dump` will fail and the script will silently move onto the
 next project. **Be sure to check that the number of samples processed (i.e. {SRA_acc}_quants/) is equal to the number of samples listed in `search-results.tsv for that project**
 
-## Step 3b. Manually clean sample metadata
-
-Since the run-info.csv file often does not contain useful sample metadata
-information an additional metadata.txt file is downloaded into the same directory.
-This file will contain SRA accessions along with associated metadata but is 
-poorly formatted and needs to be cleaned before any automated processing. 
-
-I typically create a copy of the metadata.txt file and name it `annotation.txt` (csv or tsv is also acceptable).
-Within this annotation file I create new columns for the `sample_name` (SRA accession)
-and the `group` (the grouping factor used in the experiment). **These two columns are neccessary for further processing**.
-Additional metadata columns can also be present but `sample_name` and `group` are required.
-
-Once this file is created the data is ready to be processed and exported as a 
-`SummarizedExperiment` object.
-
 ## Step 4. Create SummarizedExperiment objects for each PROJECT.
 
-This step will run an Rscript that combines the count data for each sample within 
-a PROJECT along with the sample annotations in order to create a final `SummarizedExperiment` 
-object to be used in downstream DE analyses. 
+This step will run an Rscript that combines the count data for each sample in 
+a PROJECT along with the sample annotations in order to create a final 
+`SummarizedExperiment` object to be used in downstream DE analyses. 
 
 To run the script on all projects:
 
@@ -81,7 +80,7 @@ done
 
 where:
 
-- `-d` is the directory containing all `${SRA_accession}_quants/quant.sf` files
+- `-d` is the directory containing all `${SRA_accession}_quants/` directories for a project.
 - `-f` is the sample annotation file with `sample_name` and `group` columns.
 - `-o` is the output directory
 - `-c` is the number of cores to use in processing
