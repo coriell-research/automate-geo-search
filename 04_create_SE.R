@@ -37,6 +37,7 @@ opt <- parse_args(opt_parser)
 
 # Function used to process a single quant file ----------------------------------
 # annotation files used in process function
+message("Reading in annotation files for processing steps...")
 gencove_annot <- as.data.table(readRDS("/mnt/data/gdata/human/REdiscoverTE_hg38/REdiscoverTE_hg38_GFP/GENCODE.V26.Basic_Gene_Annotation_md5_GFP.rds"))
 rmsk_annot <- as.data.table(readRDS("/mnt/data/gdata/human/REdiscoverTE_hg38/rmsk_annotation.RDS"))
 
