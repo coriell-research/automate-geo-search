@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 set -Eeuo pipefail
 
-BRIOPROJECT=$1
+BIOPROJECT=$1
 OUT_DIR=$2
 
 # get the SRA run-info for a single PROJECT ID
