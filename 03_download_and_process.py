@@ -32,12 +32,14 @@ def download_fq(accession, layout_type, threads, out_dir):
         fq1 = Path(f"{out_dir}/{accession}_1.fastq")
         fq2 = Path(f"{out_dir}/{accession}_2.fastq")
         if not (fq1.exists() and fq2.exists()):
+            subprocess.run(f"prefetch {accession} -O {Path(out_dir)}", shell=True)
             subprocess.run(f"fasterq-dump {accession} -e {threads} -p --outdir {out_dir}", shell=True)
         else:
             print(f"{fq1} and {fq2} already downloaded. skipping download...")
     else:
         fq = Path(f"{out_dir}/{accession}.fastq")
         if not fq.exists():
+            subprocess.run(f"prefetch {accession} -O {Path(out_dir)}", shell=True)
             subprocess.run(f"fasterq-dump {accession} -e {threads} -p --outdir {out_dir}", shell=True)
         else:
             print(f"{fq} already downloaded. skipping download...")
@@ -60,6 +62,7 @@ def map_sample(accession, layout_type, salmon_idx, threads, out_dir):
 
         if quant_file.exists():
             subprocess.run(f"rm -f {fq1} {fq2}", shell=True)
+            subprocess.run(f"rm -rf {Path(out_dir, accession)}", shell=True)
         else:
             sys.exit("quants.sf file not generated. Check Salmon logs.")
     else:
@@ -72,6 +75,7 @@ def map_sample(accession, layout_type, salmon_idx, threads, out_dir):
         
         if quant_file.exists():
             subprocess.run(f"rm -f {fq}", shell=True)
+            subprocess.run(f"rm -rf {Path(out_dir, accession)}", shell=True)
         else:
             sys.exit("quants.sf file not generated. Check Salmon logs")
 
