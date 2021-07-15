@@ -74,7 +74,7 @@ quant_files <- list.files(opt$quants_dir,
                           full.names = TRUE)
 
 # name each quant file with its SRA accession
-names(quant_files) <- str_extract(quant_files, "SRR[0-9]+")
+names(quant_files) <- regmatches(quant_files, regexpr("SRR[0-9]+", quant_files))
 
 # process the quant files in parallel
 message(paste("Processing quant files using", opt$cores, "cores..."))
@@ -106,18 +106,14 @@ re_mat <- re_df %>%
 
 # read in GTF file for gene annotations
 message("Reading in GTF file for gene annotations...")
-gtf <- as.data.frame(rtracklayer::import("/home/gcalendo/data/projects/yb5-combined-analysis/doc/gencode.v26.annotation.gtf.gz"))
-
-# filter for protein coding genes in gtf
-cds <- subset(gtf,
-              type == "gene" & gene_type == "protein_coding",
-              c("gene_id", "gene_name", "seqnames", "start", "end", "width", "strand")
-)
+cds <- readRDS("/home/gcalendo/data/projects/geo-rna-seq/doc/gencode.v26.annotation.cds.rds")
 
 # filter counts matrix for only protein coding genes
+message("Filtering for protein coding genes...")
 gene_mat <- subset(gene_mat, rownames(gene_mat) %in% cds$gene_name)
 
 # Check that the same samples exist in the RE matrix and gene matrix
+message("Checking colnames align in gene and RE matrices...")
 if (all(colnames(gene_mat) == colnames(re_mat))) {
   counts <- rbind(gene_mat, re_mat)
 } else {
@@ -129,7 +125,7 @@ message("Reading in sample annotation information...")
 annotation_path <- opt$annotation
 ext <- tools::file_ext(annotation_path)
 annot_df <- switch(ext,
-                   csv = vroom::vroom(annotation_path, delim = ","),
+                   csv = vroom::vroom(annotation_path, delim = ','),
                    tsv = vroom::vroom(annotation_path, delim = '\t'),
                    txt = vroom::vroom(annotation_path, delim = '\t')
                    )
@@ -139,13 +135,16 @@ stopifnot('sample_name' %in% colnames(annot_df))
 stopifnot('group' %in% colnames(annot_df))
 
 # convert the sample_name column to rownames
+message("Converting annotation from tibble to data.frame...")
 col_data <- annot_df %>%
   column_to_rownames(var = "sample_name")
 
 # coerce the group column to a factor
+message("Coercing 'group' to be a factor variable...")
 col_data$group <- factor(col_data$group)
 
 # reorder colnames of counts to match rownames of annotation
+message("Reordering the count matrix by sample metadata...")
 counts <- counts[, rownames(col_data)]
 
 # check that order of colnames in counts is same as rownames in col_data
