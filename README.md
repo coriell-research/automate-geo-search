@@ -20,6 +20,10 @@ file contains separate lines with the BIOPROJECT ID, the number of samples, and 
 
 ## Step 2. Get the run information for each project
 
+**NOTE: If you have already identified a dataset of interest the get_run_info_by_PRJNA.sh 
+script takes a BioProject ID as input and returns run-info and metadata**. This script
+is generally easier to use than the script below.
+
 The next step parses the search-results.tsv file and pulls the standard run-info.csv 
 file and an additional metadata.txt file from SRA. The script will output each 
 file in a new, separate directory named with the BIOPROJECT ID for each record present in the 
@@ -89,3 +93,13 @@ Use `Rscript 04_create_SE.R --help` for more information.
 
 Running this script *should* produce a file called `summarized_experiment.rds` located
 in the out_directory. 
+
+## Step 4b. Create MultiAssayExperiment objects
+
+The above Rscript that returns a `SummarizedExperiment` object pre-filters some
+of the data and returns all counts as one single count matrix with colData. Instead
+of returning this pre-filtered structure the `04b_create_MAE.R` script will return
+a `MultiAssayExperiment` object with one assay for gene counts (all features, 
+not just protein coding), RE counts (intergenic and intronic counts summed), 
+exonic RE counts, intronic RE counts, and intergenic RE counts. The commandline
+arguments are the same as above.
